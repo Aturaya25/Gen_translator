@@ -18,8 +18,12 @@ enum type_of_lex_dot {
     POLIZ_FGO,
     LEX_NEX,
     LEX_SHAPE,
+<<<<<<< HEAD
     LEX_ELLIPSE,
     LEX_LABEL
+=======
+    LEX_ELLIPSE
+>>>>>>> c1a5314... add Parser
 
 };
 
@@ -285,8 +289,11 @@ class Parser:Scanner{
     static stack <string> v_name;
 
 
+<<<<<<< HEAD
     class K;
     class S;
+=======
+>>>>>>> c1a5314... add Parser
     class B;
     class D;
     class Y;
@@ -335,6 +342,7 @@ void Parser::vertex_name() {
 }
 
 
+<<<<<<< HEAD
 class Parser::K{
 public:
     static void parser(){
@@ -359,10 +367,13 @@ public:
 };
 
 
+=======
+>>>>>>> c1a5314... add Parser
 class Parser::B{
 public:
     static void parse(){
 //Bbeg
+<<<<<<< HEAD
 //B1
         if(l.get_type() == LEX_LBRACK){
             l = get_lex();
@@ -377,6 +388,9 @@ public:
         if(l.get_type() == LEX_RBRACK)
             l = get_lex();
         else throw l;
+=======
+        v_name.push("");
+>>>>>>> c1a5314... add Parser
     }
 };
 
@@ -422,7 +436,11 @@ public:
         //Y1
         stk.push("(YD");
         //Dbeg
+<<<<<<< HEAD
         Parser::D::parse();
+=======
+        D().parse();
+>>>>>>> c1a5314... add Parser
         //Dend
         if(stk.top() == "(YD") stk.pop();
         else throw l;
