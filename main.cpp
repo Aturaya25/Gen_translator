@@ -12,19 +12,9 @@ enum type_of_lex_dot {
     LEX_COLON, LEX_COMMA, LEX_ED, LEX_DIEDGE,  /*18*/
     LEX_COM_THREE, LEX_COM_TWO, LEX_SLR, LEX_SLN, LEX_SL, LEX_NEQ, /*24*/
     LEX_NUM, /*25*/
-    POLIZ_LABEL, /*26*/
-    POLIZ_ADDRESS, /*27*/
-    POLIZ_GO, /*28*/
-    POLIZ_FGO,
-    LEX_NEX,
     LEX_SHAPE,
-<<<<<<< HEAD
     LEX_ELLIPSE,
     LEX_LABEL
-=======
-    LEX_ELLIPSE
->>>>>>> c1a5314... add Parser
-
 };
 
 //const char *Scanner::TW [] ={"","graph", "digraph", "strict", "subgraph", "node", "edge"};
@@ -289,11 +279,8 @@ class Parser:Scanner{
     static stack <string> v_name;
 
 
-<<<<<<< HEAD
     class K;
     class S;
-=======
->>>>>>> c1a5314... add Parser
     class B;
     class D;
     class Y;
@@ -342,7 +329,6 @@ void Parser::vertex_name() {
 }
 
 
-<<<<<<< HEAD
 class Parser::K{
 public:
     static void parser(){
@@ -367,13 +353,10 @@ public:
 };
 
 
-=======
->>>>>>> c1a5314... add Parser
 class Parser::B{
 public:
     static void parse(){
 //Bbeg
-<<<<<<< HEAD
 //B1
         if(l.get_type() == LEX_LBRACK){
             l = get_lex();
@@ -388,9 +371,7 @@ public:
         if(l.get_type() == LEX_RBRACK)
             l = get_lex();
         else throw l;
-=======
         v_name.push("");
->>>>>>> c1a5314... add Parser
     }
 };
 
@@ -436,11 +417,8 @@ public:
         //Y1
         stk.push("(YD");
         //Dbeg
-<<<<<<< HEAD
         Parser::D::parse();
-=======
-        D().parse();
->>>>>>> c1a5314... add Parser
+        Parser::D::parse();
         //Dend
         if(stk.top() == "(YD") stk.pop();
         else throw l;
@@ -472,7 +450,13 @@ public:
         else throw l;
 //Bbeg
         stk.push("(PB");
-        Parser::B().parse();
+        Parser::B::parse();
+//Bend
+        if (stk.top() == "(PY") stk.pop();
+        else throw l;
+//Pend
+        if(l.get_type() != LEX_LBRACK)
+            throw l;
     }
 };
 
@@ -483,4 +467,42 @@ void Parser::analyze(){
     if(stk.top() == "(start") stk.pop();
     else throw l;
 
+}
+
+class Interpretator {
+    Parser pars;
+public:
+    explicit Interpretator (const char* program): pars (program) {}
+    void interpretation ();
+};
+void Interpretator::interpretation () {
+    pars.analyze ();
+}
+
+double ff(const double &d){return d;}
+
+Lex Parser::l;
+stack <string> Parser::stk;
+stack <int>Parser:: st_int;
+stack <type_of_lex_dot> Parser:: semantic_stack;
+Poliz Parser:: prog(1000);
+int main () {
+    try {
+
+        Interpretator I ("lgraph.gv");
+        I.interpretation ();
+        return 0;
+    }
+    catch (char c) {
+        cout << "unexpected symbol " << c << endl;
+        return 1;
+    }
+    catch (Lex l) {
+        cout << "unexpected lexeme" << l << endl;
+        return 1;
+    }
+    catch ( const char *source ) {
+        cout << source << endl;
+        return 1;
+    }
 }
