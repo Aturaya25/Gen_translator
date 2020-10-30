@@ -332,7 +332,14 @@ void Parser::vertex_name() {
 class Parser::K{
 public:
     static void parser(){
-
+//Kbeg:
+        if(l.get_type() == LEX_LABEL)
+            l = get_lex();
+        else throw l;
+//K1:
+        if(l.get_type() == LEX_ASSIGN)
+            l = get_lex();
+        else throw l;
     }
 };
 
@@ -347,7 +354,6 @@ public:
         if(l.get_type() == LEX_ASSIGN)
             l = get_lex();
         else throw l;
-//S2:
 
     }
 };
@@ -417,7 +423,6 @@ public:
         //Y1
         stk.push("(YD");
         //Dbeg
-        Parser::D::parse();
         Parser::D::parse();
         //Dend
         if(stk.top() == "(YD") stk.pop();
