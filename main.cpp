@@ -7,18 +7,16 @@ using namespace std;
 
 enum type_of_lex_dot {
     LEX_NULL, /*0*/
-    LEX_GRAPH,LEX_DIGRAPH,LEX_STRICT, LEX_SUBGRAPH, LEX_NODE, LEX_EDGE, /*6*/
+    LEX_GRAPH,LEX_DIGRAPH,LEX_STRICT, LEX_SUBGRAPH, LEX_NODE, LEX_EDGE,LEX_SHAPE,LEX_ELLIPSE,LEX_LABEL, /*9*/
     LEX_FIN,LEX_ID, LEX_LBRACE, LEX_RBRACE, LEX_LBRACK, LEX_RBRACK, LEX_ASSIGN, LEX_SEMI,
-    LEX_COLON, LEX_COMMA, LEX_ED, LEX_DIEDGE,  /*18*/
-    LEX_COM_THREE, LEX_COM_TWO, LEX_SLR, LEX_SLN, LEX_SL, LEX_NEQ, /*24*/
-    LEX_NUM, /*25*/
-    LEX_SHAPE,
-    LEX_ELLIPSE,
-    LEX_LABEL
+    LEX_COLON, LEX_COMMA, LEX_ED, LEX_DIEDGE,  /*21*/
+    LEX_COM_THREE, LEX_COM_TWO, LEX_SLR, LEX_SLN, LEX_SL, LEX_NEQ, /*27*/
+    LEX_NUM, /*28*/
+    LEX_NAME,
 };
 
 //const char *Scanner::TW [] ={"","graph", "digraph", "strict", "subgraph", "node", "edge"};
-//const char *Scanner::TD [] ={"'", "{", "}", "[", "]", "=", ";", ":", ",", "--","->","///","//",
+//const char *Scanner::TD [] ={"@","'", "{", "}", "[", "]", "=", ";", ":", ",", "--","->","///","//",
 //                             "/r","/n","/"};
 
 
@@ -123,16 +121,17 @@ public:
 
 char Scanner::c;
 FILE*Scanner::fp;
-const char *Scanner::TW [] ={"","graph", "digraph", "strict", "subgraph", "node", "edge"};
+const char *Scanner::TW [] ={"","graph", "digraph", "strict", "subgraph", "node", "edge", "shape", "ellipse", "label"};
 const char *Scanner::TD [] ={"@", "'", "{", "}", "[", "]", "=", ";", ":", ",", "--","->","///","//",
                              "/r","/n","/", "!="};
 
 Lex Scanner::get_lex () {
     enum state {
-        H, IDENT, NUMB, COM, ALE, NEQ
+        H, IDENT, COM, DIEDGE, ID
     };
     int d, j;
     string buf;
+    stack <string> edorver;
     state CS = H;
     do {
         gc();
@@ -144,20 +143,25 @@ Lex Scanner::get_lex () {
                     }
                     else if ( isdigit(c) ) {
                         d = c - '0';
-                        CS = NUMB;
+                        CS = IDENT;
                     }
                     else if ( c== '{' ) {
                         CS = COM;
+			return Lex(LEX_LBRACE);
                     }
-                    else if ( c== ':' || c== '<' || c== '>' ) {
+		    else if (c == '['){
+			CS = COM;
+			return Lex(LEX_LBRACK);
+		    }
+                    else if ( c== '-' ) {
                         buf.push_back(c);
-                        CS = ALE;
+                        CS = DIEDGE;
                     }
-                    else if (c == '@')
+                    else if (c == '}')
                     return Lex(LEX_FIN);
-                    else if (c == '!') {
-                        buf.push_back(c);
-                        CS = NEQ;
+                    else if (c == '"') {
+                        CS = ID;
+			return Lex(LEX_ID);
                     }
                     else {
                         buf.push_back(c);
@@ -176,42 +180,34 @@ Lex Scanner::get_lex () {
                             if ( (j = look (buf, TW)) ){
                                 return Lex ((type_of_lex_dot)j, j);
                             }
-                            else {
-                                j = put(buf);
-                                return Lex (LEX_ID, j);
-                            }
+                            else
+				return Lex(LEX_NAME);
+                            
                         }
                         break;
-            case NUMB:  if ( isdigit(c) ) {
-                            d = d * 10 + (c - '0');
-                        }
-                        else {
-                            ungetc (c, fp);
-                            return Lex ( LEX_NUM, d);
-                        }
-                        break;
-            case COM: if ( c == '}') {
-                        CS = H;
-                      }
-                      else if (c == '@' || c == '{' )
+            case COM: 
+		      if (c == ']'){
+			CS = H;
+			return Lex(LEX_RBRACK);
+		      }
+                      else if ( c == '}' ){
                         throw c;
                         break;
-            case ALE: if ( c== '=') {
+		      }
+            case DIEDGE: if ( c== '>') {
                         buf.push_back(c);
-                        j = look ( buf, TD );
-                        return Lex ( (type_of_lex_dot)(j+(int)LEX_FIN), j);
-                    }
-                      else {
-                        ungetc (c, fp);
-                        j = look ( buf, TD );
-                        return Lex ( (type_of_lex_dot)(j+(int)LEX_FIN), j );
-                        }
-                      break;
-            case NEQ: if (c == '=') {
-                        buf.push_back(c);
-                        j = look ( buf, TD );
-                        return Lex ( LEX_NEQ, j );
+			CS = H;
+			return Lex(LEX_DIEDGE);
+		      }
+
+            case ID: if (c == '"') {
+                        CS = H;
+                        return Lex ( LEX_ID );
                       }
+		      else if (c == '}'){
+			      throw c;
+			      break;
+		      }
                       else
                       throw '!';
         }//end switch
@@ -221,23 +217,14 @@ Lex Scanner::get_lex () {
 
     ostream & operator << (ostream &s, Lex l){
 string t;
-if (l.t_lex <= 6)
+if (l.t_lex <= 9)
     t = Scanner::TW[l.t_lex];
-else if (l.t_lex >= 7 && l.t_lex <= 24)
+else if (l.t_lex >= 7 && l.t_lex <= 27)
     t = Scanner::TD[l.t_lex-21];
-else if (l.t_lex == 25)
-    t = "NUMB";
-else if (l.t_lex == 26)
-    t = "Label";
-else if(l.t_lex == 27)
-    t = "Addr";
 else if (l.t_lex == 28)
-    t = "!";
-else if (l.t_lex == 29)
-    t = "!F";
-else if (l.t_lex == 30)
-    t = "i++";
-else throw l;
+    t = "NUMB";
+else if(l.t_lex == 29)
+    t = "name";
     s << '(' << t << ',' << l.v_lex << ");" << endl;
     return s;
 }
@@ -324,10 +311,6 @@ void Parser::check_id () {
         throw "not declared";
 }
 
-void Parser::vertex_name() {
-
-}
-
 
 class Parser::K{
 public:
@@ -340,6 +323,18 @@ public:
         if(l.get_type() == LEX_ASSIGN)
             l = get_lex();
         else throw l;
+//K2:
+	if(l.get_type() == LEX_ID)
+		l = get_lex();
+	else throw l;
+//K3:
+	if(l.get_type() == LEX_NAME)
+		l = get_lex();
+	else throw l;
+//K4:
+	if(l.get_type() == LEX_ID)
+		l = get_lex();
+	else throw l;
     }
 };
 
@@ -347,14 +342,33 @@ class Parser::S{
 public:
     static void parser(){
 //Sbeg:
+	cout << "Sbeg"<<endl;
         if(l.get_type() == LEX_LABEL)
             l = get_lex();
         else throw l;
+	cout << "Sbegend" << endl;
 //S1:
-        if(l.get_type() == LEX_ASSIGN)
+        if(l.get_type() == LEX_ASSIGN){
             l = get_lex();
-        else throw l;
-
+	    cout << "Salend" << endl;
+	}
+        else{
+		cout << "Senderror"<<endl;       
+		throw l;
+	}
+	cout << "lex_idbeg "<< endl;
+	if(l.get_type() == LEX_ID){
+		l = get_lex();
+    }
+	else throw l;
+	cout << "lex_lab"<< endl;
+	if (l.get_type() == LEX_NAME)
+		l = get_lex();
+	else throw l;
+	cout << "lex_id sec"<< endl;
+	if(l.get_type() == LEX_ID)
+		l = get_lex();
+	else throw l;
     }
 };
 
@@ -364,20 +378,28 @@ public:
     static void parse(){
 //Bbeg
 //B1
+	cout << "B1"<<endl;
+	if (l.get_type() == LEX_NAME){
+		l = get_lex();
+	}
+	else throw l;
         if(l.get_type() == LEX_LBRACK){
             l = get_lex();
+	    cout << "B1S" << endl;
             Parser::S::parser();
         }
         else if (l.get_type() == LEX_DIEDGE) {
+	    cout << "Diedge" << endl;
             l = get_lex();
             Parser::K::parser();
         }
         else throw l;
+	cout << "B1end"<<endl;
 //B2
         if(l.get_type() == LEX_RBRACK)
             l = get_lex();
         else throw l;
-        v_name.push("");
+	cout << "B2"<<endl;
     }
 };
 
@@ -386,29 +408,41 @@ class Parser::D{
 public:
     static void parse(){
         //Dbeg
-        if(l.get_type() == LEX_NODE)
+        if(l.get_type() == LEX_NODE){
+		cout << "Node"<<endl;
             l=get_lex();
+	}
         else throw l;
         //D1
-        if(l.get_type() == LEX_LBRACK)
+        if(l.get_type() == LEX_LBRACK){
+		cout << "[" << endl;
             l=get_lex();
+	}
         else throw l;
         //D2
-        if(l.get_type() == LEX_SHAPE)
+	if(l.get_type() == LEX_SHAPE){
+		cout << "shape" << endl;
             l=get_lex();
+	}
         else throw l;
         //D3
-        if(l.get_type() == LEX_ASSIGN)
+        if(l.get_type() == LEX_ASSIGN){
+		cout << "="<<endl;
             l=get_lex();
+	}
         else throw l;
-        //D4
-        if(l.get_type() == LEX_ELLIPSE)
+	//D4
+        if(l.get_type() == LEX_ELLIPSE){
+		cout << "ellipse" << endl;
             l=get_lex();
+	}
         else throw l;
+	cout << "D4"<< endl;
         //D5
         if(l.get_type() == LEX_RBRACK)
             l=get_lex();
         else throw l;
+	cout << "D5Dend" << endl;
     }
 };
 
@@ -417,14 +451,17 @@ class Parser::Y{
 public:
     static void parse(){
         //Ybeg
-        if(l.get_type() == LEX_LBRACE)
+        if(l.get_type() == LEX_LBRACE){
+		cout << "{" << endl;
             l = get_lex();
+	}
         else throw l;
         //Y1
         stk.push("(YD");
         //Dbeg
         Parser::D::parse();
         //Dend
+	cout << "YDend" << endl;
         if(stk.top() == "(YD") stk.pop();
         else throw l;
         //Yend
@@ -438,30 +475,40 @@ class Parser::P {
 public:
     static void parse() {
 //Pbeg:
-        if (l.get_type() == LEX_GRAPH || l.get_type() == LEX_DIGRAPH)
+        if (l.get_type() == LEX_GRAPH || l.get_type() == LEX_DIGRAPH){
+	    cout << "Graph" << endl;
             l = get_lex();
+	}
         else throw l;
 //P1:
         stk.push("(PY");
 //Ybeg:
         Parser::Y::parse();
-
 //Yend:
         if (stk.top() == "(PY") stk.pop();
         else throw l;
 //P2:
+	cout << "P2beg" << endl;
         if(l.get_type() == LEX_SEMI)
             l = get_lex();
         else throw l;
+	cout << "P2end" << endl;
 //Bbeg
+	cout << "PBbeg" << endl;
         stk.push("(PB");
         Parser::B::parse();
-//Bend
-        if (stk.top() == "(PY") stk.pop();
-        else throw l;
+	cout << "PBend"<<endl;
+	if(stk.top() == "(PB") stk.pop();
+	else throw l;
+	if(l.get_type() == LEX_SEMI)
+		l=get_lex();
+	else throw l;
 //Pend
-        if(l.get_type() != LEX_LBRACK)
-            throw l;
+	cout << l<<endl;
+        if(l.get_type() != LEX_LBRACE)
+	throw l;
+	
+	cout << " all" << endl;
     }
 };
 
