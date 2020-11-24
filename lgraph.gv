@@ -11,18 +11,18 @@ digraph {
     s2 [label = 'S2'];
     p1 [label = 'P1'];
     pend [label = 'Pend'];
-    pbeg -> sbeg [label = '(1'];
-    sbeg -> s1 [headlabel = 'a'];
-    s1 -> sbeg [label = '(2'];
-    sbeg -> s3 [taillabel = 'd'];
-    s3 -> abeg [label = '(3'];
+    pbeg -> sbeg [label = '1'];
+    sbeg -> s1 [label = 'a'];
+    s1 -> sbeg [label = '2'];
+    sbeg -> s3 [label = 'd'];
+    s3 -> abeg [label = '3'];
     abeg -> a1 [label = 'd'];
-    a1 -> abeg [label = '(4'];
-    abeg -> aend;
-    aend -> aend [label = ')4'];
-    aend -> send [label = ')3'];
-    send -> s2 [label = ')2'];
+    a1 -> abeg [label = '4'];
+    abeg -> aend [label = '5'];
+    aend -> aend [label = '4'];
+    aend -> send [label = '3'];
+    send -> s2 [label = '2'];
     s2 -> send [label = 'b'];
-    send -> p1 [label = ')1'];
+    send -> p1 [label = '1'];
     p1 -> pend [label = '2'];
-}
+}@
