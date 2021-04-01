@@ -218,11 +218,13 @@ Lex Scanner::get_lex () {
                     else throw c;
                     }
                     break;
-            case IDENT: if ( isalpha(c) || isdigit(c) || flag ) {
-                            	buf.push_back(c);
-			    	flag = false;
+            case IDENT: if ( isalpha(c) || isdigit(c)) {
+				
+				 buf.push_back(c);
+				 flag = false;
                         }
                         else {
+			    flag = false;
                             ungetc (c, fp);
                             if ( (j = look (buf, TW)) ){
                                 return Lex ((type_of_lex_dot)j, j);
@@ -623,7 +625,7 @@ skobka:
 				second = sub[i+1];
 				edge_label = sub[i+2];	
 				i = i +3;
-				if (edge_label[0] == '('){
+				if ((edge_label[0] == '(') && (edge_label.size() > 1)){
 					if(!find_in(Translator::otmetka, edge_label)){
 						fout.open("lgraph.cpp",ios::app);
 						if ((!flag_kol) && (kol >1))
@@ -668,7 +670,7 @@ skobka:
 						flag_kol = true;
 				}
 				fout.open("lgraph.cpp", ios::app);
-				fout << "         if (c != '@') throw c; " << endl;
+				fout << "         if (c == '@') {} " << endl;
 				fout.close();
 				goto skobka;
 			}
@@ -700,7 +702,7 @@ skobka:
 					}
 				}
 						
-				if ( edge_label[0] == '>'){
+				if ( edge_label[0] == ')'){
                                         kol = kol - 1;
 					kol1 = kol1 - 1;
 					if (kol == 0)
@@ -721,13 +723,16 @@ skobka:
 						fout << "             gc();" << endl;
 						fout.close();
 					}
-				 	if ( edge_label[0] == '<'){
+				 	if (( edge_label[0] == '(') && (edge_label.size() == 1)){
 						fout.open("lgraph.cpp", ios::app);
-                                        	fout << "             stk.push(\"<\");" << endl;
-                                                fout << "             " << second[0]<<".parse();" << endl;
-                                                fout << "             if (stk.top() == \"<\")"<<endl;
-                                                fout << "                 stk.pop();" << endl;
-                                                fout << "             else throw c;" << endl;
+                                        	fout << "             skob.push(\"(\");" << endl;
+                                                fout << "             " << second[0]<<"().parse();" << endl;
+						fout << "             if (c == ')'){"<<endl;
+                                                fout << "                 if (skob.top() == \"(\")"<<endl;
+                                                fout << "                     skob.pop();" << endl;
+                                                fout << "                 else throw c;" << endl;
+					        fout << "                 gc();" << endl << "            }"<<endl;
+						fout << "              else throw c;" << endl;
 						fout << "          }"<<endl;
 						fout.close();
                                                 kol = kol - 1;
@@ -738,7 +743,8 @@ skobka:
 					else{
 						fout.open("lgraph.cpp",ios::app);
 						if ((second == begin_vertex) || (second[0] != first[0]))
-							fout << "             "<<second[0]<< ".parse();" << endl;
+							fout << "             "<<second[0]<< "().parse();" << endl;
+						fout << "        cout << \"" << edge_label << "\";" << endl;
 						fout << "         }" << endl;
 						fout.close();
 						kol = kol - 1;
@@ -774,7 +780,7 @@ skobka:
 void Parser::cpp_input_begin(){
 	fout.open("lgraph.cpp");
 	fout << "#include <iostream>"<<endl<<"#include <stack>"<<endl<<"using namespace std;"<<endl;
-	fout << "class Parser{"<<endl<<"   static char c;"<<endl<<"   static stack <string> stk;"<<endl;
+	fout << "class Parser{"<<endl<<"   static char c;"<<endl<<"   static stack <string> stk;"<<endl << "static stack <string> skob;"<<endl;
 	fout << "   static void gc(){cin >> c;} "<<endl;
 	fout.close();
 }
@@ -785,10 +791,10 @@ void Parser::cpp_input_end(){
 	fout << "       void analyze(){" << endl;
 	fout << "          try{ gc();" << endl;
 	fout << "              " << Scanner::vertex[0] << "().parse();"<<endl;
-	fout << "              cout << \"OK\" << endl;} " << endl;
+	fout << "              cout  << endl;} " << endl;
 	fout << "          catch(char c){" << endl;
 	fout << "               cout << \"Wrong symbol\" << c << endl; } } }; " << endl;
-	fout << "    stack <string> Parser::stk; " << endl;
+	fout << "    stack <string> Parser::stk; " << endl << "    stack <string> Parser::skob;" << endl;
 	fout << "    char Parser::c; " << endl;
 	fout << "    int main(){" << endl;
 	fout << "        Parser().analyze(); } " << endl;
