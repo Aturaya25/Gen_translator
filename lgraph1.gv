@@ -9,11 +9,11 @@ digraph {
    S1 -> A1 [label = "(1"];
    A1 -> B1 [label = "(2"];
    B1 -> B2 [label = "a"];
-   B1 -> S1 [label = "<"];
+   B1 -> S1 [label = "("];
    B2 -> A2 [label = "(2"];
    A2 -> A1 [label = "*"];
    A2 -> S2 [label = "(1"];
-   S2 -> B2 [label = ">"];
+   S2 -> B2 [label = ")"];
    S2 -> S1 [label = "+"];
    S2 -> Send [label = "@"];
  }
