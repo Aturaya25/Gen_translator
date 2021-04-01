@@ -165,6 +165,10 @@ Lex Scanner::get_lex () {
                         d = c - '0';
                         CS = IDENT;
                     }
+		    else if (c == '+' || c == '*' || c == '/'){
+			    buf.push_back(c);
+			    CS = IDENT;
+		   }
                     else if ( c== '{' ) {
                         CS = H;
 			return Lex(LEX_LBRACE);
@@ -190,8 +194,11 @@ Lex Scanner::get_lex () {
 		    else if (c == '('|| c == ')'){
 			buf.push_back(c);
 			flag = true;
-			flag1 = true;
 			CS = IDENT;
+		    }
+		    else if (c == '<' || c == '>'){
+			    buf.push_back(c);
+			    CS = IDENT;
 		    }
 		    else if (c == '='){
 			    CS = H;
@@ -212,8 +219,8 @@ Lex Scanner::get_lex () {
                     }
                     break;
             case IDENT: if ( isalpha(c) || isdigit(c) || flag ) {
-                            buf.push_back(c);
-			    flag = false;
+                            	buf.push_back(c);
+			    	flag = false;
                         }
                         else {
                             ungetc (c, fp);
@@ -221,6 +228,7 @@ Lex Scanner::get_lex () {
                                 return Lex ((type_of_lex_dot)j, j);
                             }		
 			    else{
+				   // cout << buf << endl;
 				    if (flag_edge){
 					    if(!flag_d)
 						    edge.push_back(buf);
@@ -234,9 +242,10 @@ Lex Scanner::get_lex () {
 					    vertex_name.clear();
 					    vertex_name.push_back(buf);
 				    }
-				return Lex(LEX_NAME);
 			    
-			    }}
+				return Lex(LEX_NAME);
+			    }
+			    }
 			
                         break;
             case COM: 
@@ -487,8 +496,10 @@ public:
     static void parse(){
 //Bbeg
 //B1
-	if (l.get_type() == LEX_NAME){
+	//cout << " Bbeg" << endl;
+  	if (l.get_type() == LEX_NAME){
 		l = get_lex();
+	//	cout << " name" << endl;
 		stk.push("BD");
 		Parser::D::parse();
 		if(stk.top() == "BD")
@@ -511,9 +522,12 @@ public:
         if ( l.get_type() == LEX_DIGRAPH)
             l = get_lex();
         else throw l;
+//	cout << "digraph" << endl;
 //P1:
 	if (l.get_type() == LEX_LBRACE)
 		l = get_lex();
+	else throw l;
+//	cout << "{" << endl;
 //Bbeg
         stk.push("(PB");
         Parser::B::parse();
@@ -525,6 +539,7 @@ public:
 class Parser::Translator{
 	public:
 		static vector <string>skob;
+		static vector <string> otmetka;
 		static vector <char> vertex_class ;
 		static bool find_in(vector <string> vec, string elem){
 			if (find(vec.begin(),vec.end(),elem)!=vec.end())
@@ -559,7 +574,7 @@ class Parser::Translator{
 			fout << "     void parse(){" << endl;
 			fout.close();
 			this_vertex = Translator::vertex_class.front();
-			vertex_class.erase(Translator::vertex_class.begin());
+			Translator::vertex_class.erase(Translator::vertex_class.begin());
 			next_subgraph(this_vertex);
 		}
 
@@ -569,8 +584,9 @@ class Parser::Translator{
 			vector <string> subgraph;
 			for (int i = 0; i < Scanner::vertex_name.size(); i++){
 				if((Scanner::vertex_name[i][0] == this_vertex)&&(!find_in(Scanner::edge,Scanner::vertex_name[i+1]))&&
-							(Scanner::vertex_name[i+1]!="no_met")&&
-							(!find_in(skob, Scanner::vertex_name[i+2]))){
+							(Scanner::vertex_name[i+1]!="no_met")){
+						//	&&
+						//	(!find_in(skob, Scanner::vertex_name[i+2]))){
 					for (int j = i; j < i+3; j++)
 						subgraph.push_back(Scanner::vertex_name[j]);
 					if (Scanner::vertex_name[i+2][0] == '(')
@@ -578,11 +594,8 @@ class Parser::Translator{
 				}
 			}
 			next_class(subgraph);
-		/*	fout.open("lgraph.cpp", ios::app);
-			fout << "       return; " << endl;
-			fout << "     }" << endl;
-			fout << "    };" << endl;
-			fout.close();*/
+			if (!Translator::vertex_class.empty())
+				class_input();
 		}
 
 		static void next_class(vector <string> sub){
@@ -590,99 +603,177 @@ class Parser::Translator{
 			string second;
 			string edge_label;
 			string first_if;
+			string begin_vertex;
 			int kol = 0;
 			int kol1 = 0;
 			int i = 0;
 			int j =0;
 			bool flag2 = true;
 			bool flag = true;
+			bool flag_skob = false;
+			bool flag_kol = true;
+			begin_vertex = sub[0];
 			while (flag){
+skobka:
+				if (i >= sub.size()){
+					flag = false;
+					break;
+				}
 				first = sub[i];
 				second = sub[i+1];
-				edge_label = sub[i+2];
-				i = i+3;
-skobka:
-
-				if (first == first_if){
-					fout.open("lgraph.cpp",ios::app);
-					fout << "      }" << endl;
-					fout.close();
-				}
+				edge_label = sub[i+2];	
+				i = i +3;
 				if (edge_label[0] == '('){
-					fout.open("lgraph.cpp",ios::app);
-					fout << "         stk.push(\"" << edge_label << "\");" << endl;
-					fout << "         " << second[0] << "().parse();" << endl;
+					if(!find_in(Translator::otmetka, edge_label)){
+						fout.open("lgraph.cpp",ios::app);
+						if ((!flag_kol) && (kol >1))
+							fout << "    else if{"<<endl;
+						else if ((!flag_kol) && (kol == 1))
+							fout << "    else{" << endl;
+						fout << "         stk.push(\"" << edge_label << "\");" << endl;
+						fout << "         " << second[0] << "().parse();" << endl;
 				//	kol = find_in_vector(Scanner::vertex_name, edge_label);
-					fout << "         if (stk.top() == \"" << edge_label << "\")" << endl;
-					fout << "              stk.pop();" << endl;
-					fout << "         else throw c;" << endl;
-					fout.close();
+						fout << "         if (stk.top() == \"" << edge_label << "\")" << endl;
+						fout << "              stk.pop();" << endl;
+						fout << "         else throw c;" << endl;
+						if (!flag_kol)
+							fout << "    } " << endl;
+						if (kol == 1){
+							fout << "    else throw c; " << endl;
+							kol = 0;
+							flag_kol = true;
+						}
+						else if (kol > 1)
+							kol = kol - 1;
+						if (flag_skob){
+							fout << "     }"<<endl;
+							flag_skob = false;
+						}
+						fout.close();
+						Translator::otmetka.push_back(edge_label);
+						goto skobka;
+					}
+					else{
+						kol = kol - 1;
+						if (kol == 0)
+							flag_kol = true;
+						goto skobka;
+					}
+				}	
+						
+			else if (edge_label[0] == '@'){
+				if (!flag_kol){
+					kol = kol-1;
+					if (kol == 0)
+						flag_kol = true;
 				}
-//finish:
-				else if (edge_label[0] == 'e'){
-					fout.open("lgraph.cpp", ios::app);
-					fout << "         if (c != 'e') throw c; " << endl;
-					fout.close();
-				}
-				else if (edge_label == "no_met"){
-					if (kol1 - 1 == 1)
-						flag2 = true;
-				}
-				else{
+				fout.open("lgraph.cpp", ios::app);
+				fout << "         if (c != '@') throw c; " << endl;
+				fout.close();
+				goto skobka;
+			}
+
+			else if (edge_label == "no_met"){
+				fout.open("lgraph.cpp", ios::app);
+				kol = kol - 1;
+				if (kol == 0)
+					flag_kol = true;
+				if (kol1 - 1 == 1)
+					flag2 = true;
+				goto skobka;
+			}				
+
+					
+			else{
+				if(flag_kol){
 					kol = find_in_vector(sub, first);
-				//	cout << kol << "    "<<first << endl; 
+					flag_kol = false;
 					kol1 = kol;
-					if (kol == 1){
+					if (kol == 1) {
 						fout.open("lgraph.cpp", ios::app);
-						fout << "        if (c != '" << edge_label << "') throw c;"<<endl;
-						fout << "        else gc();" << endl;
+						fout << "         if (c != '" << edge_label << "') throw c;"<<endl;
+						fout << "         else gc();" << endl;
+						fout.close();
+						flag_kol = true;
+						kol = 0;
+						goto skobka;
+					}
+				}
+						
+				if ( edge_label[0] == '>'){
+                                        kol = kol - 1;
+					kol1 = kol1 - 1;
+					if (kol == 0)
+						flag_kol = true;
+                                        goto skobka;
+                                }
+				else{
+					cout << kol << "   is kol " << kol1 << endl;
+					if (kol == kol1){
+						fout.open("lgraph.cpp", ios::app);
+						fout << "         if (c == '"<<edge_label << "'){" << endl;
+						fout << "             gc();" << endl;
 						fout.close();
 					}
 					else{
-						first_if = first;
-						kol = 0;
 						fout.open("lgraph.cpp", ios::app);
-						fout << "      if (c == '" << edge_label << "'){"<<endl;
-						fout << "         gc();" << endl;
-						flag2 = false;
-						if (sub[i+2][0] == '('){
-							first = sub[i];
-							second = sub[i+1];
-							edge_label = sub[i+2];
-							goto skobka;
-						}
+						fout << "         else if(c == '"<< edge_label << "'){" << endl;
+						fout << "             gc();" << endl;
+						fout.close();
 					}
-				}
-				if (i >= sub.size())
-					flag = false;
-
-					
-				}
+				 	if ( edge_label[0] == '<'){
+						fout.open("lgraph.cpp", ios::app);
+                                        	fout << "             stk.push(\"<\");" << endl;
+                                                fout << "             " << second[0]<<".parse();" << endl;
+                                                fout << "             if (stk.top() == \"<\")"<<endl;
+                                                fout << "                 stk.pop();" << endl;
+                                                fout << "             else throw c;" << endl;
+						fout << "          }"<<endl;
+						fout.close();
+                                                kol = kol - 1;
+						if (kol == 0)
+							flag_kol = true;
+                                                goto skobka;
+                                         }
+					else{
+						fout.open("lgraph.cpp",ios::app);
+						if ((second == begin_vertex) || (second[0] != first[0]))
+							fout << "             "<<second[0]<< ".parse();" << endl;
+						fout << "         }" << endl;
+						fout.close();
+						kol = kol - 1;
+						if (kol == 0)
+							flag_kol = true;
+						goto skobka;
+					}
+					}
+				
+				
 			
-			//	for(vector<string>::const_iterator i = Scanner::vertex.begin();i!=Scanner::vertex.end();i++)
-			//		cout<<*i<<endl;
-			
-			//for(vector <string> :: const_iterator i = sub.begin(); i!= sub.end();i++)
-			//	cout<<*i<<endl;
-			//cout << " ========" <<endl;
-			if (!flag2){
-				fout.open("lgraph.cpp", ios::app);
-				fout << "       }" << endl;
-				fout << "      else throw c;" << endl;
-				fout.close();
+			}		
 			}
 			fout.open("lgraph.cpp", ios::app);
-			fout << "         return; " << endl;
-			fout << "     }" << endl;
-			fout << "   };" << endl;
+			fout << "    }" << endl;
+			fout << "  };" << endl;
 			fout.close();
-
-			start();
+	//	for(vector<string>::const_iterator i = Translator::otmetka.begin();i!=Translator::otmetka.end();i++)
+	//		cout<<*i<<endl;
+	//	cout << " =====" <<endl;
+			
+	//		for(vector <string> :: const_iterator i = sub.begin(); i!= sub.end();i++)
+	//			cout<<*i<<endl;
+	//		cout << " ========" <<endl;
+			if (flag_skob){
+				fout.open("lgraph.cpp", ios::app);
+				fout << "       }" << endl;
+			//	fout << "      else throw c;" << endl;
+				fout.close();
+			}
 		}
 };
 void Parser::cpp_input_begin(){
 	fout.open("lgraph.cpp");
-	fout << "#include <iostream>"<<endl<<"#include <stack>"<<endl<<"using namespace std"<<endl;
+	fout << "#include <iostream>"<<endl<<"#include <stack>"<<endl<<"using namespace std;"<<endl;
 	fout << "class Parser{"<<endl<<"   static char c;"<<endl<<"   static stack <string> stk;"<<endl;
 	fout << "   static void gc(){cin >> c;} "<<endl;
 	fout.close();
@@ -739,6 +830,7 @@ stack <string> Parser::stk_br;
 stack <int>Parser:: st_int;
 char Parser::class_name;
 vector <string> Parser::Translator::skob;
+vector <string> Parser::Translator::otmetka;
 vector <char> Parser::Translator::vertex_class;
 stack <type_of_lex_dot> Parser:: semantic_stack;
 Poliz Parser:: prog(1000);
@@ -746,7 +838,7 @@ ofstream Parser::fout;
 int main () {
     try {
 
-        Interpretator I ("lgraph.gv");
+        Interpretator I ("lgraph1.gv");
         I.interpretation ();
 	cout << "OK"<< endl;
         return 0;
