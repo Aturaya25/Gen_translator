@@ -1,0 +1,3 @@
+/home/user/gen_translator/Gen_translator/build/CMakeFiles/rebuild_cache.dir
+/home/user/gen_translator/Gen_translator/build/CMakeFiles/edit_cache.dir
+/home/user/gen_translator/Gen_translator/build/CMakeFiles/untitled2.dir

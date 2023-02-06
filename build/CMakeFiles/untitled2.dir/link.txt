@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/untitled2.dir/main3.cpp.o CMakeFiles/untitled2.dir/ident.cpp.o CMakeFiles/untitled2.dir/lex.cpp.o CMakeFiles/untitled2.dir/interpretator.cpp.o CMakeFiles/untitled2.dir/parser.cpp.o CMakeFiles/untitled2.dir/poliz.cpp.o CMakeFiles/untitled2.dir/scanner.cpp.o CMakeFiles/untitled2.dir/translator.cpp.o -o untitled2 
