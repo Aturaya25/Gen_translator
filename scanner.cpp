@@ -1,7 +1,7 @@
 #include "scanner.h"
 
 Scanner::Scanner ( const char * program ) {
-    *TW ={"", "digraph", "label"};
+    *TW [] = ["", "digraph", "label"];
     *TD [] ={"}", "\"", "{", "[", "]", "=", ";", ":", ",", "--","->","(",")","///","//",
                             "/r","/n","/", "!="};
     fp = fopen ( program, "r" );
